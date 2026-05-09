@@ -1,0 +1,7 @@
+{
+  "name": "pi-text-mode-extension",
+  "private": true,
+  "pi": {
+    "extensions": ["./text-mode.ts"]
+  }
+}

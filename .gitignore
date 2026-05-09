@@ -1,3 +1,8 @@
 *
+!agent/
+agent/*
 !agent/settings.json
-!agent/extensions
+!agent/extensions/
+!agent/extensions/**
+
+.DS_store

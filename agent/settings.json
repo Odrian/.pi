@@ -1,0 +1,31 @@
+{
+  "lastChangelogVersion": "0.74.0",
+  "defaultProvider": "coreinfra",
+  "defaultModel": "gpt-5.4",
+  "theme": "dark",
+  "defaultThinkingLevel": "medium",
+  "transport": "sse",
+  "packages": [
+    {
+      "source": "npm:@axnic/pi-extension-settings",
+      "extensions": [
+        "-dist/index.js"
+      ]
+    },
+    "npm:pi-markdown-preview",
+    "npm:pi-ask-user",
+    "npm:pi-btw",
+    {
+      "source": "npm:@ollama/pi-web-search",
+      "extensions": [
+        "-index.ts"
+      ]
+    },
+    "npm:pi-extension-manager"
+  ],
+  "extensions:settings": {
+    "pi-extension-settings": {
+      "behavior.start-in-search-mode": false
+    }
+  }
+}
