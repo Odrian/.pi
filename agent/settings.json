@@ -1,7 +1,7 @@
 {
-  "lastChangelogVersion": "0.74.0",
-  "defaultProvider": "coreinfra",
-  "defaultModel": "gpt-5.4",
+  "lastChangelogVersion": "0.84.4",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.6-sol",
   "theme": "dark",
   "defaultThinkingLevel": "medium",
   "transport": "sse",
@@ -21,7 +21,31 @@
         "-index.ts"
       ]
     },
-    "npm:pi-extension-manager"
+    "npm:pi-extension-manager",
+    {
+      "source": "npm:pi-caveman",
+      "extensions": [
+        "-extensions/caveman.ts"
+      ]
+    },
+    {
+      "source": "npm:@coreinfra/pi-plugin@latest",
+      "extensions": [
+        "-index.ts"
+      ]
+    },
+    "npm:pi-web-access",
+    "npm:pi-mcp-adapter",
+    {
+      "source": "npm:pi-protected-paths",
+      "extensions": [
+        "+index.ts"
+      ]
+    },
+    "npm:@sreetej510/pi-usage",
+    "npm:@npm-ken/pi-macos-notify",
+    "npm:@indexyz/pi-continue",
+    "npm:pi-session-finder"
   ],
   "extensions:settings": {
     "pi-extension-settings": {

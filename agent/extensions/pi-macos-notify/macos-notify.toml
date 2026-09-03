@@ -1,0 +1,17 @@
+enabled = true
+title = "Pi"
+sound = "Glass" # set "" for silent
+max_message_length = 180
+ignore_nested_pi = true # suppress when this Pi was launched by another Pi bash tool
+
+[events]
+session_start = false
+agent_start = false
+agent_settled = true
+tool_error = false
+user_question = true
+model_select = false
+message_end = false # payload text, off by default
+session_shutdown = false
+thinking_level_select = false
+session_compact = false

@@ -3,8 +3,6 @@ import { join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 const TEXT_MODE_ENTRY = "text-mode";
-const TEXT_MODE_SESSION_NAME = "Text mode";
-const DEFAULT_NORMAL_TOOLS = ["read", "bash", "edit", "write"];
 const FALLBACK_PROMPT = "\u200b";
 const CRITICAL_THINKING_PROMT_NAME = "critical_thinking";
 const CORRECT_PROGRAMMING_PROMT_NAME = "correct_programming";
@@ -76,26 +74,12 @@ function scrubProviderPayload(payload: unknown): unknown {
 export default function textModeExtension(pi: ExtensionAPI) {
 	let textModeEnabled = false;
 
-	function updateUi(ctx: ExtensionContext) {
-		if (textModeEnabled) {
-			pi.setActiveTools([]);
-			ctx.ui.setStatus("text-mode", ctx.ui.theme.fg("accent", "✍ text"));
-		} else {
-			if (pi.getActiveTools().length === 0) {
-				pi.setActiveTools(DEFAULT_NORMAL_TOOLS);
-			}
-			ctx.ui.setStatus("text-mode", undefined);
-		}
-	}
-
-	function enableTextMode(ctx: ExtensionContext) {
+	function enableTextMode() {
 		textModeEnabled = true;
 		pi.appendEntry<TextModeState>(TEXT_MODE_ENTRY, {
 			enabled: true,
 			createdAt: Date.now(),
 		});
-		pi.setSessionName(TEXT_MODE_SESSION_NAME);
-		updateUi(ctx);
 	}
 
 	function restoreState(ctx: ExtensionContext) {
@@ -106,8 +90,6 @@ export default function textModeExtension(pi: ExtensionAPI) {
 			const data = entry.data as TextModeState | undefined;
 			textModeEnabled = data?.enabled !== false;
 		}
-
-		updateUi(ctx);
 	}
 
 	pi.registerCommand("text", {
@@ -122,7 +104,6 @@ export default function textModeExtension(pi: ExtensionAPI) {
 						enabled: true,
 						createdAt: Date.now(),
 					});
-					sm.appendSessionInfo(TEXT_MODE_SESSION_NAME);
 				},
 				withSession: async (newCtx) => {
 					newCtx.ui.notify("Opened a new text-mode chat. Tools are disabled.", "success");
@@ -143,7 +124,7 @@ export default function textModeExtension(pi: ExtensionAPI) {
 
 		const choice = await ctx.ui.select("Выберите режим", ["Обычный режим", "Text mode"]);
 		if (choice === "Text mode") {
-			enableTextMode(ctx);
+			enableTextMode();
 			ctx.ui.notify("Text mode включён для новой пустой сессии.", "success");
 		}
 	});
@@ -152,9 +133,7 @@ export default function textModeExtension(pi: ExtensionAPI) {
 		restoreState(ctx);
 	});
 
-	pi.on("before_agent_start", async (event, ctx) => {
-		updateUi(ctx);
-
+	pi.on("before_agent_start", async (event, _ctx) => {
 		if (textModeEnabled) {
 			return {
 				systemPrompt: loadPrompt(CRITICAL_THINKING_PROMT_NAME),
