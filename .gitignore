@@ -4,5 +4,7 @@ agent/*
 !agent/settings.json
 !agent/extensions/
 !agent/extensions/**
+!agent/models.json
+**/node_modules/
 
 .DS_store

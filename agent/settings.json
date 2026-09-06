@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.84.4",
+  "lastChangelogVersion": "0.85.1",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.6-sol",
   "theme": "dark",
@@ -15,12 +15,6 @@
     "npm:pi-markdown-preview",
     "npm:pi-ask-user",
     "npm:pi-btw",
-    {
-      "source": "npm:@ollama/pi-web-search",
-      "extensions": [
-        "-index.ts"
-      ]
-    },
     "npm:pi-extension-manager",
     {
       "source": "npm:pi-caveman",
@@ -31,18 +25,28 @@
     {
       "source": "npm:@coreinfra/pi-plugin@latest",
       "extensions": [
-        "-index.ts"
+        "+index.ts"
       ]
     },
-    "npm:pi-web-access",
-    "npm:pi-mcp-adapter",
     {
-      "source": "npm:pi-protected-paths",
+      "source": "npm:pi-web-access",
       "extensions": [
         "+index.ts"
       ]
     },
-    "npm:@sreetej510/pi-usage",
+    "npm:pi-mcp-adapter",
+    {
+      "source": "npm:pi-protected-paths",
+      "extensions": [
+        "-index.ts"
+      ]
+    },
+    {
+      "source": "npm:@sreetej510/pi-usage",
+      "extensions": [
+        "-dist/index.js"
+      ]
+    },
     "npm:@npm-ken/pi-macos-notify",
     "npm:@indexyz/pi-continue",
     "npm:pi-session-finder"
@@ -51,5 +55,17 @@
     "pi-extension-settings": {
       "behavior.start-in-search-mode": false
     }
-  }
+  },
+  "tuiMode": "fullscreen",
+  "treeFilterMode": "labeled-only",
+  "quietStartup": false,
+  "markdown": {
+    "mermaid": "streaming"
+  },
+  "followUpMode": "all",
+  "steeringMode": "all",
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "showHardwareCursor": false
 }

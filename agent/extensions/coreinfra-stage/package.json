@@ -1,0 +1,8 @@
+{
+  "name": "pi-coreinfra-stage-local",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "undici": "8.9.0"
+  }
+}
