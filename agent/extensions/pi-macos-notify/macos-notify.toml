@@ -3,6 +3,7 @@ title = "Pi"
 sound = "Glass" # set "" for silent
 max_message_length = 180
 ignore_nested_pi = true # suppress when this Pi was launched by another Pi bash tool
+suppress_when_active = true # suppress while focused; remove notification when focus returns
 
 [events]
 session_start = false

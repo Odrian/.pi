@@ -1,5 +1,5 @@
 {
-  "name": "pi-coreinfra-stage-local",
+  "name": "pi-codex-proxy-coreinfra-local",
   "private": true,
   "type": "module",
   "dependencies": {
