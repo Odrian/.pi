@@ -44,17 +44,19 @@ export default function reloadAll(pi: ExtensionAPI) {
 	let readTimer: ReturnType<typeof setTimeout> | undefined;
 	let lastSeenId: string | undefined;
 	let reloadQueued = false;
+	let watcherGeneration = 0;
 
 	const stopWatcher = () => {
+		watcherGeneration++;
 		if (readTimer) clearTimeout(readTimer);
 		readTimer = undefined;
 		watcher?.close();
 		watcher = undefined;
 	};
 
-	const receiveSignal = async () => {
+	const receiveSignal = async (generation: number) => {
 		const signal = await readSignal();
-		if (!signal || signal.id === lastSeenId || reloadQueued) return;
+		if (generation !== watcherGeneration || !signal || signal.id === lastSeenId || reloadQueued) return;
 
 		lastSeenId = signal.id;
 		reloadQueued = true;
@@ -66,24 +68,33 @@ export default function reloadAll(pi: ExtensionAPI) {
 
 	const scheduleSignalRead = () => {
 		if (readTimer || reloadQueued) return;
+		const generation = watcherGeneration;
 		readTimer = setTimeout(() => {
 			readTimer = undefined;
-			void receiveSignal();
+			void receiveSignal(generation).catch((error) => {
+				if (generation !== watcherGeneration) return;
+				reloadQueued = false;
+				console.error("reload-all signal:", error);
+			});
 		}, 30);
 	};
 
 	pi.on("session_start", async (_event, ctx) => {
 		stopWatcher();
+		const generation = watcherGeneration;
 		reloadQueued = false;
 		await mkdir(dirname(SIGNAL_FILE), { recursive: true });
-		lastSeenId = (await readSignal())?.id;
+		const initialSignal = await readSignal();
+		if (generation !== watcherGeneration) return;
+		lastSeenId = initialSignal?.id;
 
 		watcher = watch(dirname(SIGNAL_FILE), (_eventType, filename) => {
-			if (filename?.toString() === SIGNAL_NAME) scheduleSignalRead();
+			if (generation === watcherGeneration && filename?.toString() === SIGNAL_NAME) scheduleSignalRead();
 		});
 		// The watcher must not keep RPC/print processes alive after stdin closes.
 		watcher.unref();
 		watcher.on("error", (error) => {
+			if (generation !== watcherGeneration) return;
 			if (ctx.hasUI) ctx.ui.notify(`reload-all watcher: ${error.message}`, "warning");
 		});
 	});

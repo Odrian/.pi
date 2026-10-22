@@ -11,9 +11,9 @@ const AGENT_DIR =
   process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
 const CONFIG_PATH = join(AGENT_DIR, "codex-proxy-coreinfra.json");
 const BASE_URL =
-  "https://stage.hub.coreinfra.ai/openai/subscription/api/v1";
+  "https://hub.coreinfra.ai/openai/subscription/api/v1";
 const CHATGPT_HOST = "chatgpt.com";
-const OPENAI_PROXY_URL = "https://stage.proxy.hub.coreinfra.ai:443";
+const OPENAI_PROXY_URL = "https://proxy.hub.coreinfra.ai:443";
 const CODEX_RESPONSES_PATH = "/openai/subscription/api/v1/codex/responses";
 const RESPONSES_PATH = "/openai/subscription/api/v1/responses";
 const FETCH_PATCH_KEY = Symbol.for("codex-proxy-coreinfra.responses-fetch-patch");
@@ -102,7 +102,7 @@ function installFetchPatch(getOpenAIProxy: () => ProxyAgent | undefined): () => 
     }
 
     if (
-      url.hostname === "stage.hub.coreinfra.ai" &&
+      url.hostname === "hub.coreinfra.ai" &&
       url.pathname === CODEX_RESPONSES_PATH
     ) {
       url.pathname = RESPONSES_PATH;

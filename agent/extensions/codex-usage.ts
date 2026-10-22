@@ -5,7 +5,7 @@ import type {
 
 const PROVIDER_ID = "openai-codex";
 const USAGE_URL = "https://chatgpt.com/backend-api/wham/usage";
-const USAGE_CACHE_MS = 3 * 60 * 1000;
+const USAGE_CACHE_MS = 60 * 1000;
 const STATUS_ID = "provider-usage";
 
 type UsageWindow = { label: string; usedPercent: number; resetsAt?: number };
@@ -78,7 +78,7 @@ function usageReport(snapshot: UsageSnapshot): string {
   ].join("\n");
 }
 
-async function fetchUsage(ctx: ExtensionContext): Promise<UsageSnapshot> {
+async function fetchUsage(ctx: ExtensionContext, signal: AbortSignal): Promise<UsageSnapshot> {
   const model =
     ctx.model?.provider === PROVIDER_ID
       ? ctx.model
@@ -88,6 +88,7 @@ async function fetchUsage(ctx: ExtensionContext): Promise<UsageSnapshot> {
   if (!model) throw new Error("OpenAI Codex model is unavailable; run /login");
 
   const resolved = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+  signal.throwIfAborted();
   if (!resolved.ok) throw new Error(resolved.error);
   const headers = new Headers();
   for (const [name, value] of Object.entries(resolved.headers ?? {})) {
@@ -104,7 +105,7 @@ async function fetchUsage(ctx: ExtensionContext): Promise<UsageSnapshot> {
 
   const response = await fetch(USAGE_URL, {
     headers,
-    signal: ctx.signal,
+    signal,
   });
   const text = await response.text();
   if (!response.ok) {
@@ -118,6 +119,7 @@ async function fetchUsage(ctx: ExtensionContext): Promise<UsageSnapshot> {
 export default function codexUsage(pi: ExtensionAPI) {
   let usage: UsageSnapshot | undefined;
   let usageRequest: Promise<UsageSnapshot> | undefined;
+  let lifetime = new AbortController();
 
   const refreshUsage = async (
     ctx: ExtensionContext,
@@ -125,16 +127,19 @@ export default function codexUsage(pi: ExtensionAPI) {
   ): Promise<UsageSnapshot> => {
     if (!force && usage && Date.now() - usage.capturedAt < USAGE_CACHE_MS) return usage;
     if (usageRequest) return usageRequest;
-    usageRequest = fetchUsage(ctx)
+    const signal = lifetime.signal;
+    const request = fetchUsage(ctx, signal)
       .then((snapshot) => {
+        signal.throwIfAborted();
         usage = snapshot;
         if (ctx.hasUI) ctx.ui.setStatus(STATUS_ID, statusText(snapshot));
         return snapshot;
       })
       .finally(() => {
-        usageRequest = undefined;
+        if (usageRequest === request) usageRequest = undefined;
       });
-    return usageRequest;
+    usageRequest = request;
+    return request;
   };
 
   const refreshInBackground = (ctx: ExtensionContext, force = false) => {
@@ -142,18 +147,26 @@ export default function codexUsage(pi: ExtensionAPI) {
       if (ctx.hasUI) ctx.ui.setStatus(STATUS_ID, undefined);
       return;
     }
+    const signal = lifetime.signal;
     void refreshUsage(ctx, force).catch(() => {
+      if (signal.aborted) return;
       if (!usage && ctx.hasUI) ctx.ui.setStatus(STATUS_ID, "codex usage unavailable");
     });
   };
 
-  pi.on("session_start", (_event, ctx) => refreshInBackground(ctx));
+  pi.on("session_start", (_event, ctx) => {
+    lifetime.abort();
+    lifetime = new AbortController();
+    usageRequest = undefined;
+    refreshInBackground(ctx);
+  });
   pi.on("model_select", (event, ctx) => {
     if (event.model.provider === PROVIDER_ID) refreshInBackground(ctx);
     else if (ctx.hasUI) ctx.ui.setStatus(STATUS_ID, undefined);
   });
   pi.on("agent_settled", (_event, ctx) => refreshInBackground(ctx));
   pi.on("session_shutdown", (_event, ctx) => {
+    lifetime.abort();
     if (ctx.hasUI) ctx.ui.setStatus(STATUS_ID, undefined);
   });
 
@@ -175,10 +188,13 @@ export default function codexUsage(pi: ExtensionAPI) {
         ctx.ui.notify("Usage: /usage [--refresh]", "warning");
         return;
       }
+      const signal = lifetime.signal;
       try {
         const snapshot = await refreshUsage(ctx, argument === "--refresh");
+        if (signal.aborted) return;
         ctx.ui.notify(usageReport(snapshot), "info");
       } catch (error) {
+        if (signal.aborted) return;
         ctx.ui.notify(
           `Usage unavailable: ${error instanceof Error ? error.message : String(error)}`,
           "error",

@@ -33,6 +33,11 @@ function branchDoesNotExist(stdout: string, stderr: string): boolean {
 }
 
 export default function (pi: ExtensionAPI) {
+	let sessionGeneration = 0;
+	pi.on("session_shutdown", () => {
+		sessionGeneration++;
+	});
+
 	pi.registerCommand("cd", {
 		description: "Перейти в другую директорию, сохранив текущий контекст сессии",
 		handler: async (args, ctx) => {
@@ -50,6 +55,7 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
+			const generation = sessionGeneration;
 			try {
 				const expandedPath = path === "~" || path.startsWith("~/")
 					? resolve(homedir(), path.slice(2))
@@ -83,6 +89,8 @@ export default function (pi: ExtensionAPI) {
 					ctx.ui.notify("Переключение сессии отменено.", "info");
 				}
 			} catch (error) {
+				// Replacement may fail after the old runtime has already been disposed.
+				if (generation !== sessionGeneration) throw error;
 				const message = error instanceof Error ? error.message : String(error);
 				ctx.ui.notify(`Не удалось перейти в директорию: ${message}`, "error");
 			}
@@ -106,6 +114,7 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
+			const generation = sessionGeneration;
 			try {
 				let result = await pi.exec(
 					"wt",
@@ -149,6 +158,7 @@ export default function (pi: ExtensionAPI) {
 					ctx.ui.notify("Переключение сессии отменено.", "info");
 				}
 			} catch (error) {
+				if (generation !== sessionGeneration) throw error;
 				const message = error instanceof Error ? error.message : String(error);
 				ctx.ui.notify(`Не удалось переключить worktree: ${message}`, "error");
 			}
